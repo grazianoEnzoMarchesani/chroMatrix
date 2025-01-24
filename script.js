@@ -213,26 +213,62 @@ function hexToRgb(hex) {
 }
 
 function findClosestColorValue(targetRgb, colorLegend) {
-    let minDistance = Infinity;
-    let closestValue = null;
-
-    for (let legendEntry of colorLegend) {
-        let distance = colorDistance(targetRgb, legendEntry.rgb);
-        if (distance < minDistance) {
-            minDistance = distance;
-            closestValue = legendEntry.value;
+    let targetLab = rgbToLab(targetRgb);
+    
+    // Trova i due colori più vicini nella legenda
+    let closestColors = [];
+    let minDistances = [];
+    
+    colorLegend.forEach((entry, index) => {
+        let distance = colorDistance(targetRgb, entry.rgb);
+        
+        // Mantieni i due colori più vicini
+        if (minDistances.length < 2) {
+            minDistances.push(distance);
+            closestColors.push({index, entry});
+            // Ordina gli array
+            if (minDistances.length === 2 && minDistances[0] > minDistances[1]) {
+                [minDistances[0], minDistances[1]] = [minDistances[1], minDistances[0]];
+                [closestColors[0], closestColors[1]] = [closestColors[1], closestColors[0]];
+            }
+        } else if (distance < minDistances[1]) {
+            if (distance < minDistances[0]) {
+                minDistances[1] = minDistances[0];
+                closestColors[1] = closestColors[0];
+                minDistances[0] = distance;
+                closestColors[0] = {index, entry};
+            } else {
+                minDistances[1] = distance;
+                closestColors[1] = {index, entry};
+            }
         }
+    });
+    
+    // Se abbiamo trovato un colore esatto, restituisci il suo valore
+    if (minDistances[0] < 1) {
+        return closestColors[0].entry.value;
     }
-
-    return closestValue;
+    
+    // Calcola l'interpolazione tra i due colori più vicini
+    let color1 = closestColors[0].entry;
+    let color2 = closestColors[1].entry;
+    
+    // Calcola il fattore di interpolazione basato sulla distanza nel spazio LAB
+    let totalDistance = minDistances[0] + minDistances[1];
+    let factor = minDistances[0] / totalDistance;
+    
+    // Interpola il valore
+    return color1.value + (color2.value - color1.value) * factor;
 }
 
 function colorDistance(rgb1, rgb2) {
-    // Using Euclidean distance in RGB space
+    let lab1 = rgbToLab(rgb1);
+    let lab2 = rgbToLab(rgb2);
+    
     return Math.sqrt(
-        Math.pow(rgb1[0] - rgb2[0], 2) +
-        Math.pow(rgb1[1] - rgb2[1], 2) +
-        Math.pow(rgb1[2] - rgb2[2], 2)
+        Math.pow(lab1[0] - lab2[0], 2) +
+        Math.pow(lab1[1] - lab2[1], 2) +
+        Math.pow(lab1[2] - lab2[2], 2)
     );
 }
 
@@ -290,12 +326,36 @@ function createMatrix(rows, cols) {
     colors.push(maxColor.value);
 
     // Create color legend with proper mapping
-    let colorLegend = colors.map((color, index) => {
-        let rgb = hexToRgb(color);
-        return {
-            rgb: rgb,
-            value: min + ((max - min) / (colors.length - 1)) * index
-        };
+    let colorLegend = [];
+    for (let i = 0; i < colors.length - 1; i++) {
+        let rgb1 = hexToRgb(colors[i]);
+        let rgb2 = hexToRgb(colors[i + 1]);
+        let value1 = min + ((max - min) / (colors.length - 1)) * i;
+        let value2 = min + ((max - min) / (colors.length - 1)) * (i + 1);
+        
+        // Aggiungi il colore di partenza
+        colorLegend.push({
+            rgb: rgb1,
+            value: value1
+        });
+        
+        // Aggiungi punti intermedi per una migliore interpolazione
+        for (let j = 1; j < 10; j++) {
+            let factor = j / 10;
+            let r = Math.round(rgb1[0] + (rgb2[0] - rgb1[0]) * factor);
+            let g = Math.round(rgb1[1] + (rgb2[1] - rgb1[1]) * factor);
+            let b = Math.round(rgb1[2] + (rgb2[2] - rgb1[2]) * factor);
+            
+            colorLegend.push({
+                rgb: [r, g, b],
+                value: value1 + (value2 - value1) * factor
+            });
+        }
+    }
+    // Aggiungi l'ultimo colore
+    colorLegend.push({
+        rgb: hexToRgb(colors[colors.length - 1]),
+        value: max
     });
 
     // Calcola le dimensioni di ogni cella della matrice
@@ -323,4 +383,38 @@ function createMatrix(rows, cols) {
 
     // Visualizza la matrice
     displayMatrix(matrix);
+}
+
+function rgbToLab(rgb) {
+    // Conversione RGB -> XYZ
+    let r = rgb[0] / 255;
+    let g = rgb[1] / 255;
+    let b = rgb[2] / 255;
+
+    r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
+    g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
+    b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
+
+    r *= 100;
+    g *= 100;
+    b *= 100;
+
+    let x = r * 0.4124 + g * 0.3576 + b * 0.1805;
+    let y = r * 0.2126 + g * 0.7152 + b * 0.0722;
+    let z = r * 0.0193 + g * 0.1192 + b * 0.9505;
+
+    // XYZ -> Lab
+    x /= 95.047;
+    y /= 100.000;
+    z /= 108.883;
+
+    x = x > 0.008856 ? Math.pow(x, 1/3) : (7.787 * x) + 16/116;
+    y = y > 0.008856 ? Math.pow(y, 1/3) : (7.787 * y) + 16/116;
+    z = z > 0.008856 ? Math.pow(z, 1/3) : (7.787 * z) + 16/116;
+
+    return [
+        (116 * y) - 16,    // L
+        500 * (x - y),     // a
+        200 * (y - z)      // b
+    ];
 }
