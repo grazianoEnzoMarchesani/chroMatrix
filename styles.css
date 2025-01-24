@@ -1,0 +1,100 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+canvas {
+    border: 1px solid #000;
+    margin-top: 20px;
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+#selectionInfo {
+    margin-top: 20px;
+    font-size: 1.2em;
+}
+
+#colorLegend {
+    margin-top: 20px;
+}
+
+#colorLegend > div {
+    margin: 10px 0;
+}
+
+#intermediateColors {
+    margin: 20px 0;
+}
+
+.colorInput {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+    gap: 10px;
+}
+
+.colorPicker {
+    width: 50px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.colorValue {
+    width: 80px;
+    margin-right: 10px;
+}
+
+.removeColor {
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+#addColor {
+    margin-top: 10px;
+    padding: 5px 10px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+#colorPreview {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#selectedColor {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #000;
+}
+
+#colorValue {
+    font-family: monospace;
+}
+
+#createMatrixBtn {
+    margin: 10px 0;
+    padding: 8px 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#createMatrixBtn:hover {
+    background-color: #45a049;
+}
