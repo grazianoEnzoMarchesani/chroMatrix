@@ -3,41 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Heat Map Selector</title>
+    <title>Generatore Gradiente Dinamico</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
 </head>
 <body>
-    <h1>Selettore Heat Map</h1>
-    <input type="file" id="imageInput" accept="image/*">
-    <div id="colorLegend">
-        <h3>Legenda Colori:</h3>
-        <div>
-            <label for="minColor">Colore Minimo:</label>
-            <input type="color" id="minColor">
-            <label for="minValue">Valore Minimo:</label>
-            <input type="number" id="minValue">
-        </div>
-        <div id="intermediateColors">
-            <h4>Colori Intermedi:</h4>
-            <div id="colorInputs">
-                <!-- Intermediate colors will be added here -->
+    <div class="container">
+        <div class="gradient-container">
+            <h1>Generatore Gradiente</h1>
+            <div class="color-bar-container">
+                <input type="number" id="leftValue" class="side-input" value="0" step="0.01">
+                <div class="color-bar"></div>
+                <input type="number" id="rightValue" class="side-input"  value="100" step="0.01">
             </div>
-            <button id="addIntermediateColor">Aggiungi Colore Intermedio</button>
+            <div class="color-stops"></div>
+            <div class="buttons">
+                <button onclick="addColorStop()" class="add-button">Aggiungi Colore</button>
+                <button onclick="removeColorStop()" class="remove-button">Rimuovi Colore</button>
+            </div>
+
+            <div class="color-picker-container">
+                <label for="colorPicker">Seleziona un colore:</label>
+                <input type="color" id="colorPicker" value="#ff0000">
+                <span>Valore calcolato: <span id="valorePosizione">-</span></span>
+            </div>
         </div>
-        <div>
-            <label for="maxColor">Colore Massimo:</label>
-            <input type="color" id="maxColor">
-            <label for="maxValue">Valore Massimo:</label>
-            <input type="number" id="maxValue">
+        <div id="colors-container">
+            <!-- I color picker verranno aggiunti qui dinamicamente -->
         </div>
-    </div>
-    <canvas id="imageCanvas"></canvas>
-    <div id="selectionInfo"></div>
-    <button id="createMatrixBtn" style="display: none;">Crea Matrice</button>
-    <div id="colorPreview">
-        <span>Colore selezionato:</span>
-        <div id="selectedColor"></div>
-        <span id="colorValue"></span>
     </div>
     <script src="script.js"></script>
 </body>

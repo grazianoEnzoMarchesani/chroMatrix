@@ -1,100 +1,161 @@
 body {
     font-family: Arial, sans-serif;
-    margin: 20px;
-}
-
-canvas {
-    border: 1px solid #000;
-    margin-top: 20px;
-    max-width: 100%;
-    height: auto;
-    display: block;
-}
-
-#selectionInfo {
-    margin-top: 20px;
-    font-size: 1.2em;
-}
-
-#colorLegend {
-    margin-top: 20px;
-}
-
-#colorLegend > div {
-    margin: 10px 0;
-}
-
-#intermediateColors {
-    margin: 20px 0;
-}
-
-.colorInput {
-    display: flex;
-    align-items: center;
-    margin: 10px 0;
-    gap: 10px;
-}
-
-.colorPicker {
-    width: 50px;
-    height: 30px;
+    margin: 0;
     padding: 0;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f5f5f5;
 }
 
-.colorValue {
+.container {
+    background-color: white;
+    padding: 3rem 4rem;
+    border-radius: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 800px;
+}
+
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 3rem;
+    text-align: center;
+    color: #333;
+}
+
+.gradient-container {
+    margin: 2rem 0;
+    padding: 2rem;
+}
+
+.gradient-preview {
+    height: 200px;
+    border-radius: 1rem;
+    margin: 2rem 0;
+}
+
+.color-stops {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 2rem 0;
+}
+
+.color-input {
+    width: 50px;
+    height: 50px;
+    margin: 0 1rem;
+}
+
+.position-input {
+    font-size: 1.2rem;
+    padding: 0.5rem;
     width: 80px;
-    margin-right: 10px;
+    text-align: center;
 }
 
-.removeColor {
-    background: #ff4444;
-    color: white;
+.buttons {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    margin-top: 3rem;
+}
+
+button {
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
     border: none;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
+    border-radius: 0.8rem;
     cursor: pointer;
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
 }
 
 #addColor {
-    margin-top: 10px;
-    padding: 5px 10px;
-    background: #4CAF50;
+    background-color: #4CAF50;
     color: white;
-    border: none;
-    cursor: pointer;
 }
 
-#colorPreview {
-    margin-top: 20px;
+#removeColor {
+    background-color: #f44336;
+    color: white;
+}
+
+.color-bar {
+    width: 100%;
+    max-width: 800px;
+    height: 100px;
+    border-radius: 10px;
+    position: relative;
+}
+
+#colors-container {
+    position: absolute;
+    top: calc(100px + 5px);
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 30px;
+    pointer-events: none;
+}
+
+.color-input:hover {
+    transform: translateX(-50%) scale(1.1);
+    transition: transform 0.2s ease;
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+#remove-color {
+    background-color: #f44336;
+}
+
+#remove-color:hover {
+    background-color: #da190b;
+}
+
+.add-button {
+    background-color: #4CAF50;
+}
+
+.remove-button {
+    background-color: #f44336;
+}
+
+.color-bar-container {
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-#selectedColor {
-    width: 30px;
-    height: 30px;
-    border: 1px solid #000;
-}
-
-#colorValue {
-    font-family: monospace;
-}
-
-#createMatrixBtn {
-    margin: 10px 0;
-    padding: 8px 16px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
+.side-input {
+    width: 60px;
+    padding: 5px;
+    border: 1px solid #ccc;
     border-radius: 4px;
-    cursor: pointer;
+    text-align: center;
+}
+
+.step-input {
+    width: 120px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
     font-size: 14px;
 }
 
-#createMatrixBtn:hover {
-    background-color: #45a049;
+.step-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
 }
