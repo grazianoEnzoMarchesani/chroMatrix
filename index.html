@@ -22,15 +22,68 @@
                 <button onclick="removeColorStop()" class="remove-button">Rimuovi Colore</button>
             </div>
 
+            <div class="form-group">
+                <label for="interpolation">Interpolazione Colori:</label>
+                <select id="interpolation" class="form-control">
+                    <option value="linear">Lineare</option>
+                    <option value="smooth">Smooth</option>
+                </select>
+            </div>
+
             <div class="color-picker-container">
                 <label for="colorPicker">Seleziona un colore:</label>
                 <input type="color" id="colorPicker" value="#ff0000">
                 <span>Valore calcolato: <span id="valorePosizione">-</span></span>
             </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="grid-rows">Righe griglia:</label>
+                    <input type="number" id="grid-rows" min="1" value="2">
+                </div>
+                <div class="control-group">
+                    <label for="grid-cols">Colonne griglia:</label>
+                    <input type="number" id="grid-cols" min="1" value="2">
+                </div>
+            </div>
         </div>
         <div id="colors-container">
             <!-- I color picker verranno aggiunti qui dinamicamente -->
         </div>
+        <div class="image-processing-container">
+            <div class="image-upload-controls">
+                <input type="file" id="imageInput" accept="image/*" class="file-input">
+                <label for="imageInput" class="upload-label">Scegli un'immagine</label>
+            </div>
+
+            <div class="canvas-wrapper">
+                <div class="canvas-container">
+                    <canvas id="imageCanvas"></canvas>
+                    <canvas id="drawingCanvas"></canvas>
+                </div>
+            </div>
+
+            <div class="grid-controls">
+              
+            </div>
+
+            <div id="sampled-colors" class="color-samples">
+                <h3>Colori campionati:</h3>
+                <div id="samples-container"></div>
+                <div id="samples-results"></div>
+            </div>
+        </div>
+    </div>
+    <div class="controls-container">
+        <!-- Qui vanno i controlli (selettori, input, ecc.) -->
+    </div>
+
+    <div class="image-container">
+        <!-- L'immagine caricata apparirà qui -->
+    </div>
+
+    <div class="color-grid">
+        <!-- Qui va la griglia dei colori -->
     </div>
     <script src="script.js"></script>
 </body>
