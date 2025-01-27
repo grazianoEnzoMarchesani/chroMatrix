@@ -1,5 +1,12 @@
 let colorStops = [];
-const defaultColors = ['#ff0000', '#0000ff'];
+const defaultColors = [
+    'rgb(234,38,0)',    // Red
+    'rgb(234,118,0)',   // Orange
+    'rgb(247,203,55)',  // Yellow
+    'rgb(226,230,141)', // Light Green
+    'rgb(164,194,241)', // Light Blue
+    'rgb(75,107,169)'   // Blue
+];
 let interpolationType = 'linear';
 
 // Aggiungi queste variabili all'inizio del file
@@ -15,45 +22,36 @@ let gridRows = 2;
 let gridCols = 2;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Inizializza con due colori predefiniti agli estremi
+    // Initialize with all colors evenly distributed
     defaultColors.forEach((color, index) => {
-        addColorStop(color, index === 0 ? 0 : 1);
+        const position = index / (defaultColors.length - 1);
+        addColorStop(color, position);
     });
     updateGradient();
 
-    // Aggiungi l'event listener al color picker
-    document.getElementById('colorPicker').addEventListener('input', function(e) {
-        const coloreSelezionato = e.target.value;
-        const gradientColors = getGradientColors();
-        const minValue = parseFloat(document.getElementById('leftValue').value);
-        const maxValue = parseFloat(document.getElementById('rightValue').value);
-        
-        const valore = calcolaValore(coloreSelezionato);
-        
-        // Aggiorna il display con il valore calcolato
-        document.getElementById('valorePosizione').textContent = valore;
-    });
-
-    // Gestione caricamento immagine
+    // Image upload handling
     const imageInput = document.getElementById('imageInput');
     const imagePreview = document.getElementById('imagePreview');
 
     imageInput.addEventListener('change', handleImageUpload);
 
-    // Aggiungi dopo l'inizializzazione degli altri event listener
+    // Add after other event listeners initialization
     document.getElementById('grid-rows').addEventListener('change', function(e) {
         gridRows = parseInt(e.target.value) || 2;
         if (currentRect) {
-            drawRect();
+            redrawAll();
         }
     });
 
     document.getElementById('grid-cols').addEventListener('change', function(e) {
         gridCols = parseInt(e.target.value) || 2;
         if (currentRect) {
-            drawRect();
+            redrawAll();
         }
     });
+
+    // Aggiungiamo l'event listener per il pulsante di download
+    document.getElementById('downloadCSV').addEventListener('click', downloadCSV);
 });
 
 // Funzione per ottenere i colori del gradiente
@@ -71,75 +69,6 @@ function getGradientColors() {
     };
 }
 
-// Funzione per calcolare la distanza tra due colori esadecimali con maggiore precisione
-function colorDistance(hex1, hex2) {
-    const r1 = parseInt(hex1.slice(1, 3), 16);
-    const g1 = parseInt(hex1.slice(3, 5), 16);
-    const b1 = parseInt(hex1.slice(5, 7), 16);
-    
-    const r2 = parseInt(hex2.slice(1, 3), 16);
-    const g2 = parseInt(hex2.slice(3, 5), 16);
-    const b2 = parseInt(hex2.slice(5, 7), 16);
-    
-    // Usiamo una formula più sensibile che considera la percezione umana del colore
-    const deltaR = r1 - r2;
-    const deltaG = g1 - g2;
-    const deltaB = b1 - b2;
-    
-    // Formula di distanza colore migliorata
-    return Math.sqrt(
-        (2 + (r1 + r2) / 256) * deltaR * deltaR +
-        4 * deltaG * deltaG +
-        (2 + (255 - (r1 + r2) / 256)) * deltaB * deltaB
-    );
-}
-
-// Funzione per calcolare il valore in base al colore selezionato con maggiore sensibilità
-function calcolaValore(coloreSelezionato) {
-    // Ottieni tutti i colori del gradiente
-    const gradientColors = colorStops.map(stop => stop.color);
-    
-    // Trova l'indice del colore selezionato
-    const index = gradientColors.indexOf(coloreSelezionato);
-    
-    if (index === -1) {
-        // Se il colore non è esattamente presente, trova il colore più vicino
-        let closestIndex = 0;
-        let minDistance = Infinity;
-        let secondClosestIndex = 0;
-        let secondMinDistance = Infinity;
-        
-        // Trova i due colori più vicini
-        gradientColors.forEach((color, i) => {
-            const distance = colorDistance(coloreSelezionato, color);
-            if (distance < minDistance) {
-                secondMinDistance = minDistance;
-                secondClosestIndex = closestIndex;
-                minDistance = distance;
-                closestIndex = i;
-            } else if (distance < secondMinDistance) {
-                secondMinDistance = distance;
-                secondClosestIndex = i;
-            }
-        });
-        
-        // Calcola la posizione interpolata tra i due colori più vicini
-        const totalDistance = minDistance + secondMinDistance;
-        const weight1 = (totalDistance - minDistance) / totalDistance;
-        const weight2 = (totalDistance - secondMinDistance) / totalDistance;
-        
-        const position1 = closestIndex / (gradientColors.length - 1);
-        const position2 = secondClosestIndex / (gradientColors.length - 1);
-        
-        const interpolatedPosition = (position1 * weight1 + position2 * weight2);
-        
-        return Math.round(interpolatedPosition * 100);
-    }
-    
-    // Calcola il valore in base alla posizione del colore
-    return Math.round((index / (gradientColors.length - 1)) * 100);
-}
-
 function addColorStop(color = '#ff0000', position = null) {
     const colorStop = {
         color: color,
@@ -154,7 +83,16 @@ function addColorStop(color = '#ff0000', position = null) {
     const colorStopsContainer = document.querySelector('.color-stops');
     const colorPicker = document.createElement('input');
     colorPicker.type = 'color';
-    colorPicker.value = color;
+    
+    // Converti il colore RGB in formato esadecimale
+    if (color.startsWith('rgb')) {
+        const rgb = color.match(/\d+/g);
+        const hex = '#' + rgb.map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
+        colorPicker.value = hex;
+    } else {
+        colorPicker.value = color;
+    }
+    
     colorPicker.className = 'color-stop';
     
     // Aggiorna solo il colore, non la posizione
@@ -324,10 +262,19 @@ function setupDrawingEvents() {
     drawingCanvas.addEventListener('mouseleave', stopDrawing);
 }
 
+function getMousePos(canvas, evt) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: (evt.clientX - rect.left) * (canvas.width / rect.width),
+        y: (evt.clientY - rect.top) * (canvas.height / rect.height)
+    };
+}
+
 function startDrawing(e) {
-    const bounds = drawingCanvas.getBoundingClientRect();
-    startX = e.clientX - bounds.left;
-    startY = e.clientY - bounds.top;
+    isDrawing = true;
+    const pos = getMousePos(drawingCanvas, e);
+    startX = pos.x;
+    startY = pos.y;
     
     // Controlla se si sta cliccando su una maniglia
     const handle = getHandle(startX, startY);
@@ -354,97 +301,126 @@ function startDrawing(e) {
 function draw(e) {
     if (!isDrawing && !isDragging) return;
     
-    const bounds = drawingCanvas.getBoundingClientRect();
-    const currentX = e.clientX - bounds.left;
-    const currentY = e.clientY - bounds.top;
+    const pos = getMousePos(drawingCanvas, e);
+    const currentX = pos.x;
+    const currentY = pos.y;
+    
+    // Ridisegna l'immagine originale per pulire il canvas
+    drawCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+    drawCtx.drawImage(imageCanvas, 0, 0, drawingCanvas.width, drawingCanvas.height);
     
     if (isDrawing) {
         // Disegna un nuovo rettangolo
-        rect.width = currentX - rect.x;
-        rect.height = currentY - rect.y;
-    } else if (isDragging) {
-        if (selectedHandle) {
-            // Ridimensiona il rettangolo esistente
-            resizeRect(currentX, currentY);
-        } else {
-            // Sposta il rettangolo esistente
-            rect.x = currentX - startX;
-            rect.y = currentY - startY;
+        drawCtx.beginPath();
+        drawCtx.strokeStyle = '#4CAF50';
+        drawCtx.lineWidth = 2;
+        drawCtx.rect(startX, startY, currentX - startX, currentY - startY);
+        drawCtx.stroke();
+        
+        // Aggiorna currentRect
+        currentRect = {
+            x: startX,
+            y: startY,
+            width: currentX - startX,
+            height: currentY - startY
+        };
+    } else if (isDragging && selectedHandle) {
+        // Ridimensiona il rettangolo
+        const newRect = calculateNewRectDimensions(currentX, currentY);
+        currentRect = newRect;
+        
+        // Disegna il rettangolo corrente
+        drawCtx.beginPath();
+        drawCtx.strokeStyle = '#4CAF50';
+        drawCtx.lineWidth = 2;
+        drawCtx.rect(currentRect.x, currentRect.y, currentRect.width, currentRect.height);
+        drawCtx.stroke();
+    }
+    
+    // Disegna solo la griglia e le maniglie durante il trascinamento
+    drawGridLinesOnly();
+    drawHandles();
+}
+
+function calculateNewRectDimensions(currentX, currentY) {
+    const newRect = { ...currentRect };
+    
+    switch (selectedHandle) {
+        case 'tl': // Top-left
+            newRect.width = newRect.x + newRect.width - currentX;
+            newRect.height = newRect.y + newRect.height - currentY;
+            newRect.x = currentX;
+            newRect.y = currentY;
+            break;
+        case 'tr': // Top-right
+            newRect.width = currentX - newRect.x;
+            newRect.height = newRect.y + newRect.height - currentY;
+            newRect.y = currentY;
+            break;
+        case 'bl': // Bottom-left
+            newRect.width = newRect.x + newRect.width - currentX;
+            newRect.height = currentY - newRect.y;
+            newRect.x = currentX;
+            break;
+        case 'br': // Bottom-right
+            newRect.width = currentX - newRect.x;
+            newRect.height = currentY - newRect.y;
+            break;
+    }
+    
+    // Impedisci dimensioni negative
+    if (newRect.width < 10) {
+        newRect.width = 10;
+        if (selectedHandle.includes('l')) {
+            newRect.x = currentRect.x + currentRect.width - 10;
+        }
+    }
+    if (newRect.height < 10) {
+        newRect.height = 10;
+        if (selectedHandle.includes('t')) {
+            newRect.y = currentRect.y + currentRect.height - 10;
         }
     }
     
-    drawRect();
-}
-
-function stopDrawing() {
-    isDrawing = false;
-    isDragging = false;
-    selectedHandle = null;
-    
-    // Aggiorna currentRect e ridisegna la griglia
-    if (rect.width !== 0 && rect.height !== 0) {
-        currentRect = {
-            x: rect.x,
-            y: rect.y,
-            width: rect.width,
-            height: rect.height
-        };
-        drawGridOnRectangle();
-    }
-}
-
-function drawRect() {
-    drawCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-    
-    // Disegna il rettangolo
-    drawCtx.strokeStyle = '#4CAF50';
-    drawCtx.lineWidth = 2;
-    drawCtx.strokeRect(rect.x, rect.y, rect.width, rect.height);
-    
-    // Aggiorna currentRect e disegna la griglia
-    currentRect = {
-        x: rect.x,
-        y: rect.y,
-        width: rect.width,
-        height: rect.height
-    };
-    drawGridOnRectangle();
-    
-    // Disegna le maniglie
-    drawHandles();
-    
-    // Campiona i colori
-    sampleColors();
+    return newRect;
 }
 
 function drawHandles() {
+    if (!currentRect) return;
+    
     const handles = [
-        { x: rect.x, y: rect.y }, // Top-left
-        { x: rect.x + rect.width, y: rect.y }, // Top-right
-        { x: rect.x, y: rect.y + rect.height }, // Bottom-left
-        { x: rect.x + rect.width, y: rect.y + rect.height } // Bottom-right
+        { pos: 'tl', x: currentRect.x, y: currentRect.y },
+        { pos: 'tr', x: currentRect.x + currentRect.width, y: currentRect.y },
+        { pos: 'bl', x: currentRect.x, y: currentRect.y + currentRect.height },
+        { pos: 'br', x: currentRect.x + currentRect.width, y: currentRect.y + currentRect.height }
     ];
     
     handles.forEach(handle => {
         drawCtx.beginPath();
-        drawCtx.arc(handle.x, handle.y, 5, 0, Math.PI * 2);
+        drawCtx.arc(handle.x, handle.y, 6, 0, Math.PI * 2);
         drawCtx.fillStyle = 'white';
         drawCtx.fill();
         drawCtx.strokeStyle = '#4CAF50';
+        drawCtx.lineWidth = 2;
         drawCtx.stroke();
     });
 }
 
 function getHandle(x, y) {
+    if (!currentRect) return null;
+    
     const handles = [
-        { pos: 'tl', x: rect.x, y: rect.y },
-        { pos: 'tr', x: rect.x + rect.width, y: rect.y },
-        { pos: 'bl', x: rect.x, y: rect.y + rect.height },
-        { pos: 'br', x: rect.x + rect.width, y: rect.y + rect.height }
+        { pos: 'tl', x: currentRect.x, y: currentRect.y },
+        { pos: 'tr', x: currentRect.x + currentRect.width, y: currentRect.y },
+        { pos: 'bl', x: currentRect.x, y: currentRect.y + currentRect.height },
+        { pos: 'br', x: currentRect.x + currentRect.width, y: currentRect.y + currentRect.height }
     ];
     
     for (const handle of handles) {
-        if (Math.abs(handle.x - x) < 10 && Math.abs(handle.y - y) < 10) {
+        const dx = handle.x - x;
+        const dy = handle.y - y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < 10) {
             return handle.pos;
         }
     }
@@ -501,35 +477,43 @@ function resizeRect(currentX, currentY) {
     }
 }
 
-function drawGridOnRectangle() {
+function drawGridLinesOnly() {
     if (!currentRect) return;
     
-    const ctx = drawingCanvas.getContext('2d');
     const { x, y, width, height } = currentRect;
     
-    ctx.lineWidth = 1;
+    drawCtx.lineWidth = 1;
     
     // Disegna le linee verticali della griglia
     for (let i = 1; i < gridCols; i++) {
         const xPos = x + (width * i / gridCols);
-        ctx.beginPath();
-        ctx.moveTo(xPos, y);
-        ctx.lineTo(xPos, y + height);
-        ctx.strokeStyle = 'white';
-        ctx.stroke();
+        drawCtx.beginPath();
+        drawCtx.moveTo(xPos, y);
+        drawCtx.lineTo(xPos, y + height);
+        drawCtx.strokeStyle = 'white';
+        drawCtx.stroke();
     }
     
     // Disegna le linee orizzontali della griglia
     for (let i = 1; i < gridRows; i++) {
         const yPos = y + (height * i / gridRows);
-        ctx.beginPath();
-        ctx.moveTo(x, yPos);
-        ctx.lineTo(x + width, yPos);
-        ctx.strokeStyle = 'white';
-        ctx.stroke();
+        drawCtx.beginPath();
+        drawCtx.moveTo(x, yPos);
+        drawCtx.lineTo(x + width, yPos);
+        drawCtx.strokeStyle = 'white';
+        drawCtx.stroke();
     }
+}
+
+function drawGridOnRectangle() {
+    if (!currentRect) return;
     
-    // Disegna i punti centrali di ogni cella
+    const { x, y, width, height } = currentRect;
+    
+    // Disegna le linee della griglia
+    drawGridLinesOnly();
+    
+    // Disegna i punti di intersezione
     const cellWidth = width / gridCols;
     const cellHeight = height / gridRows;
     
@@ -540,12 +524,12 @@ function drawGridOnRectangle() {
             const centerY = y + (row * cellHeight) + (cellHeight / 2);
             
             // Disegna il punto
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
-            ctx.fillStyle = 'white';
-            ctx.fill();
-            ctx.strokeStyle = '#4CAF50';
-            ctx.stroke();
+            drawCtx.beginPath();
+            drawCtx.arc(centerX, centerY, 3, 0, Math.PI * 2);
+            drawCtx.fillStyle = 'white';
+            drawCtx.fill();
+            drawCtx.strokeStyle = '#4CAF50';
+            drawCtx.stroke();
         }
     }
 }
@@ -625,6 +609,25 @@ function handleImageUpload(event) {
                 
                 // Resetta il rettangolo
                 rect = { x: 0, y: 0, width: 0, height: 0 };
+
+                // Create "Update Sampling" button if it doesn't exist
+                let updateButton = document.getElementById('updateSampling');
+                if (!updateButton) {
+                    updateButton = document.createElement('button');
+                    updateButton.id = 'updateSampling';
+                    updateButton.textContent = 'Update Sampling';
+                    updateButton.className = 'add-button';
+                    updateButton.addEventListener('click', function() {
+                        if (currentRect) {
+                            redrawAll();
+                        }
+                    });
+                    
+                    const imageInput = document.getElementById('imageInput');
+                    imageInput.parentNode.insertBefore(updateButton, imageInput.nextSibling);
+                }
+                
+                updateButton.style.display = 'inline-block';
             };
             img.src = e.target.result;
         };
@@ -680,14 +683,12 @@ function updateSampledColors(colors) {
     container.innerHTML = '';
     resultsContainer.innerHTML = '';
 
-    // Crea la griglia dei punti colorati
     const dotsGrid = document.createElement('div');
     dotsGrid.style.display = 'grid';
     dotsGrid.style.gridTemplateColumns = `repeat(${gridCols}, auto)`;
     dotsGrid.style.gap = '10px';
     container.appendChild(dotsGrid);
 
-    // Crea la griglia dei risultati
     const resultsGrid = document.createElement('div');
     resultsGrid.style.display = 'grid';
     resultsGrid.style.gridTemplateColumns = `repeat(${gridCols}, auto)`;
@@ -695,29 +696,41 @@ function updateSampledColors(colors) {
     resultsGrid.style.marginTop = '20px';
     resultsContainer.appendChild(resultsGrid);
 
+    // Ottieni i valori del range
+    const minValue = parseFloat(document.getElementById('leftValue').value) || 0;
+    const maxValue = parseFloat(document.getElementById('rightValue').value) || 100;
+    const range = maxValue - minValue;
+
     colors.forEach((row, rowIndex) => {
         row.forEach((color, colIndex) => {
-            // Crea il punto colorato
             const dot = document.createElement('div');
             dot.className = 'color-dot';
             dot.style.backgroundColor = color;
             dotsGrid.appendChild(dot);
 
-            // Calcola e crea il risultato
             const result = document.createElement('div');
             result.className = 'sample-result';
             
-            const distances = calculateDistances(color);
-            const minDistance = Math.min(...distances);
-            const position = distances.indexOf(minDistance);
-            const percentage = ((position / (distances.length - 1)) * 100).toFixed(1);
+            const position = findColorPosition(color);
+            const percentage = position / 100;
+            // Calcola il valore numerico basato sul range
+            const actualValue = minValue + (range * percentage);
+            
+            const colorLab = chroma(color).lab();
+            const gradientColorLab = chroma(getGradientColorAt(position/100)).lab();
+            const distance = Math.sqrt(
+                Math.pow(colorLab[0] - gradientColorLab[0], 2) +
+                Math.pow(colorLab[1] - gradientColorLab[1], 2) +
+                Math.pow(colorLab[2] - gradientColorLab[2], 2)
+            );
             
             result.innerHTML = `
                 <div class="sample-color" style="background-color: ${color}"></div>
                 <div class="sample-info">
                     <strong>R${rowIndex+1}C${colIndex+1}</strong><br>
-                    ${percentage}%<br>
-                    d=${minDistance.toFixed(1)}
+                    ${position}%<br>
+                    Value: ${actualValue.toFixed(2)}<br>
+                    d=${distance.toFixed(1)}
                 </div>
             `;
             
@@ -726,37 +739,35 @@ function updateSampledColors(colors) {
     });
 }
 
-function updateColorGrid(sampledColors) {
-    // Passa direttamente la matrice dei colori
-    updateSampledColors(sampledColors);
-}
-
-// Modifichiamo la funzione calculateDistances per accettare un colore come parametro
-function calculateDistances(inputColor) {
-    const distances = [];
-    const steps = 100;
+function findColorPosition(targetColor) {
+    const targetLab = chroma(targetColor).lab();
+    let minDistance = Infinity;
+    let bestPosition = 0;
     
-    for (let i = 0; i <= steps; i++) {
-        const gradientColor = getGradientColorAt(i / steps);
-        const distance = calculateColorDistance(inputColor, gradientColor);
-        distances.push(distance);
+    // Campiona il gradiente in più punti per una maggiore precisione
+    const samples = 1000;
+    
+    for (let i = 0; i < samples; i++) {
+        const position = i / (samples - 1);
+        const gradientColor = getGradientColorAt(position);
+        const gradientLab = chroma(gradientColor).lab();
+        
+        // Calcola la distanza euclidea nello spazio LAB
+        const distance = Math.sqrt(
+            Math.pow(targetLab[0] - gradientLab[0], 2) +
+            Math.pow(targetLab[1] - gradientLab[1], 2) +
+            Math.pow(targetLab[2] - gradientLab[2], 2)
+        );
+        
+        if (distance < minDistance) {
+            minDistance = distance;
+            bestPosition = position;
+        }
     }
     
-    return distances;
+    return Math.round(bestPosition * 100);
 }
 
-// Aggiorniamo la funzione che gestisce il color picker
-function updateSelectedColor(color) {
-    const distances = calculateDistances(color);
-    const minDistance = Math.min(...distances);
-    const position = distances.indexOf(minDistance);
-    const percentage = ((position / (distances.length - 1)) * 100).toFixed(1);
-    
-    // Aggiorna il display con il valore calcolato
-    document.getElementById('valorePosizione').textContent = `${percentage}%`;
-}
-
-// Aggiungi questa funzione per calcolare il colore nel gradiente
 function getGradientColorAt(position) {
     // Trova i due color stop più vicini
     let leftStop = colorStops[0];
@@ -778,16 +789,141 @@ function getGradientColorAt(position) {
     return chroma.mix(leftStop.color, rightStop.color, relativePosition, interpolationType === 'smooth' ? 'lab' : 'rgb').hex();
 }
 
-// Aggiungi anche questa funzione per calcolare la distanza tra due colori
-function calculateColorDistance(color1, color2) {
-    // Usa chroma.js per calcolare la distanza nel spazio LAB
-    const lab1 = chroma(color1).lab();
-    const lab2 = chroma(color2).lab();
+function updateRange() {
+    const leftVal = parseFloat(document.getElementById('leftValue').value) || 0;
+    const rightVal = parseFloat(document.getElementById('rightValue').value) || 0;
     
-    // Calcola la distanza euclidea nello spazio LAB
-    return Math.sqrt(
-        Math.pow(lab1[0] - lab2[0], 2) +
-        Math.pow(lab1[1] - lab2[1], 2) +
-        Math.pow(lab1[2] - lab2[2], 2)
-    );
+    const min = Math.min(leftVal, rightVal);
+    const max = Math.max(leftVal, rightVal);
+    
+    console.log(`Il range è: ${min} - ${max}`);
+}
+
+// Aggiungi gli event listener per i due campi
+document.getElementById('leftValue').addEventListener('input', updateRange);
+document.getElementById('rightValue').addEventListener('input', updateRange);
+
+// Aggiungi questa funzione di utilità per ridisegnare tutto
+function redrawAll() {
+    if (!currentRect) return;
+    
+    drawCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+    drawCtx.drawImage(imageCanvas, 0, 0, drawingCanvas.width, drawingCanvas.height);
+    
+    drawCtx.beginPath();
+    drawCtx.strokeStyle = '#4CAF50';
+    drawCtx.lineWidth = 2;
+    drawCtx.rect(currentRect.x, currentRect.y, currentRect.width, currentRect.height);
+    drawCtx.stroke();
+    
+    drawGridOnRectangle();
+    drawHandles();
+    sampleColors();
+}
+
+function stopDrawing() {
+    if (isDrawing || isDragging) {
+        // Normalizza le dimensioni del rettangolo
+        if (currentRect) {
+            currentRect = {
+                x: Math.min(currentRect.x, currentRect.x + currentRect.width),
+                y: Math.min(currentRect.y, currentRect.y + currentRect.height),
+                width: Math.abs(currentRect.width),
+                height: Math.abs(currentRect.height)
+            };
+        }
+        
+        // Esegui il ridisegno completo e il campionamento
+        redrawAll();
+    }
+    
+    isDrawing = false;
+    isDragging = false;
+    selectedHandle = null;
+}
+
+function updateSample(percentage) {
+    const sampleContainer = document.createElement('div');
+    sampleContainer.className = 'sample-container';
+    
+    const colorSample = document.createElement('div');
+    colorSample.className = 'color-sample';
+    colorSample.style.backgroundColor = getColorAtPosition(percentage);
+    
+    const sampleInfo = document.createElement('div');
+    sampleInfo.className = 'sample-info';
+    
+    const percentageSpan = document.createElement('span');
+    percentageSpan.className = 'percentage';
+    percentageSpan.textContent = `${Math.round(percentage * 100)}%`;
+    
+    const actualValue = document.createElement('span');
+    actualValue.className = 'actual-value';
+    
+    // Calcolo del valore effettivo basato sul range
+    const minValue = parseFloat(document.getElementById('minRange').value);
+    const maxValue = parseFloat(document.getElementById('maxRange').value);
+    const range = maxValue - minValue;
+    const actualNumericValue = minValue + (range * percentage);
+    actualValue.textContent = `Valore: ${actualNumericValue.toFixed(2)}`;
+    
+    sampleInfo.appendChild(percentageSpan);
+    sampleInfo.appendChild(actualValue);
+    
+    sampleContainer.appendChild(colorSample);
+    sampleContainer.appendChild(sampleInfo);
+    
+    document.getElementById('samples').appendChild(sampleContainer);
+}
+
+function downloadCSV() {
+    const resultsContainer = document.getElementById('samples-results');
+    const resultsGrid = resultsContainer.firstChild;
+    if (!resultsGrid) return;
+    
+    const rows = gridRows;
+    const cols = gridCols;
+    
+    // Create CSV header
+    let csvContent = 'data:text/csv;charset=utf-8,';
+    
+    // Add column headers
+    let headers = [];
+    for (let j = 0; j < cols; j++) {
+        headers.push(`Column_${j + 1}`);
+    }
+    csvContent += headers.join(',') + '\n';
+    
+    // Add sampled values
+    const results = resultsGrid.children;
+    for (let i = 0; i < rows; i++) {
+        let rowValues = [];
+        for (let j = 0; j < cols; j++) {
+            const index = i * cols + j;
+            const resultDiv = results[index];
+            if (resultDiv) {
+                // Extract numeric value from text
+                const sampleInfo = resultDiv.querySelector('.sample-info');
+                const valueText = sampleInfo.innerHTML.split('<br>')[2]; // Gets the line with "Value: X.XX"
+                const value = valueText.split(': ')[1]; // Extracts only the number
+                rowValues.push(value);
+            } else {
+                rowValues.push('');
+            }
+        }
+        csvContent += rowValues.join(',') + '\n';
+    }
+    
+    // Create download link
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'sampled_values.csv');
+    
+    // Add link to document and click
+    document.body.appendChild(link);
+    link.click();
+    
+    // Remove link
+    document.body.removeChild(link);
 }

@@ -1,89 +1,97 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generatore Gradiente Dinamico</title>
+    <title>chroMatrix</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <div class="gradient-container">
-            <h1>Generatore Gradiente</h1>
-            <div class="color-bar-container">
-                <input type="number" id="leftValue" class="side-input" value="0" step="0.01">
-                <div class="color-bar"></div>
-                <input type="number" id="rightValue" class="side-input"  value="100" step="0.01">
-            </div>
-            <div class="color-stops"></div>
-            <div class="buttons">
-                <button onclick="addColorStop()" class="add-button">Aggiungi Colore</button>
-                <button onclick="removeColorStop()" class="remove-button">Rimuovi Colore</button>
-            </div>
-
-            <div class="form-group">
-                <label for="interpolation">Interpolazione Colori:</label>
-                <select id="interpolation" class="form-control">
-                    <option value="linear">Lineare</option>
-                    <option value="smooth">Smooth</option>
-                </select>
-            </div>
-
-            <div class="color-picker-container">
-                <label for="colorPicker">Seleziona un colore:</label>
-                <input type="color" id="colorPicker" value="#ff0000">
-                <span>Valore calcolato: <span id="valorePosizione">-</span></span>
-            </div>
-
-            <div class="controls">
-                <div class="control-group">
-                    <label for="grid-rows">Righe griglia:</label>
-                    <input type="number" id="grid-rows" min="1" value="2">
+        <header class="main-header">
+            <h1 class="title">chroMatrix</h1>
+        </header>
+        
+        <main class="content">
+            <div class="gradient-container">
+                <div class="range-inputs">
+                    <div class="color-bar-container">
+                        <input type="number" id="leftValue" class="side-input" value="0" step="0.01">
+                        <div class="color-bar"></div>
+                        <input type="number" id="rightValue" class="side-input"  value="100" step="0.01">
+                    </div>
+                    <div class="color-stops"></div>
+                    <div class="buttons">
+                        <button onclick="addColorStop()" class="add-button">Add Color</button>
+                        <button onclick="removeColorStop()" class="remove-button">Remove Color</button>
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label for="grid-cols">Colonne griglia:</label>
-                    <input type="number" id="grid-cols" min="1" value="2">
-                </div>
-            </div>
-        </div>
-        <div id="colors-container">
-            <!-- I color picker verranno aggiunti qui dinamicamente -->
-        </div>
-        <div class="image-processing-container">
-            <div class="image-upload-controls">
-                <input type="file" id="imageInput" accept="image/*" class="file-input">
-                <label for="imageInput" class="upload-label">Scegli un'immagine</label>
-            </div>
 
-            <div class="canvas-wrapper">
-                <div class="canvas-container">
-                    <canvas id="imageCanvas"></canvas>
-                    <canvas id="drawingCanvas"></canvas>
+                <div class="gradient-controls-section">
+                    <div class="interpolation-control">
+                        <label for="interpolation">Color Interpolation:</label>
+                        <select id="interpolation" class="form-control">
+                            <option value="linear">Linear</option>
+                            <option value="smooth">Smooth</option>
+                        </select>
+                    </div>
+
+                    <div class="color-selection-panel">
+                        <div class="grid-controls-group">
+                            <div class="control-item">
+                                <label for="grid-rows">Grid Rows:</label>
+                                <input type="number" id="grid-rows" min="1" value="2" class="number-input">
+                            </div>
+                            <div class="control-item">
+                                <label for="grid-cols">Grid Columns:</label>
+                                <input type="number" id="grid-cols" min="1" value="2" class="number-input">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <div class="grid-controls">
-              
+            <div id="colors-container">
+                <!-- Color pickers will be added here dynamically -->
             </div>
+            <div class="image-processing-container">
+                <div class="image-upload-controls">
+                    <input type="file" id="imageInput" accept="image/*" class="file-input">
+                    <label for="imageInput" class="upload-label">Choose an image</label>
+                </div>
 
-            <div id="sampled-colors" class="color-samples">
-                <h3>Colori campionati:</h3>
-                <div id="samples-container"></div>
-                <div id="samples-results"></div>
+                <div class="canvas-wrapper">
+                    <div class="canvas-container">
+                        <canvas id="imageCanvas"></canvas>
+                        <canvas id="drawingCanvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="grid-controls">
+                </div>
+
+                <div id="sampled-colors" class="color-samples">
+                    <h3>Sampled Colors:</h3>
+                    <div id="samples-container"></div>
+                    <div id="samples-results"></div>
+                    <button id="downloadCSV" class="download-button">Download CSV</button>
+                </div>
             </div>
-        </div>
+            <div class="sample-container">
+                <div class="color-sample"></div>
+            </div>
+        </main>
     </div>
     <div class="controls-container">
-        <!-- Qui vanno i controlli (selettori, input, ecc.) -->
+        <!-- Controls (selectors, inputs, etc.) go here -->
     </div>
 
     <div class="image-container">
-        <!-- L'immagine caricata apparirà qui -->
+        <!-- Uploaded image will appear here -->
     </div>
 
     <div class="color-grid">
-        <!-- Qui va la griglia dei colori -->
+        <!-- Color grid goes here -->
     </div>
     <script src="script.js"></script>
 </body>
