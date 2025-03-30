@@ -1,5 +1,5 @@
 # chroMatrix - Image Color Analysis Tool
-
+![Cover](cover.png)
 
 **chroMatrix** is an interactive web app for analyzing image colors, released under the GNU General Public License v3. It allows users to define a custom gradient, upload an image, select an area, sample colors within a grid, and visualize their position within the gradient, with the option to download the data in CSV format.
 
